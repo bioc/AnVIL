@@ -13,7 +13,7 @@
     },
     "termsOfService": "https://github.com/dockstore/dockstore-ui2/raw/develop/src/assets/docs/Dockstore_Terms_of_Service.pdf",
     "title": "Dockstore API",
-    "version": "1.15.4"
+    "version": "1.16.0"
   },
   "basePath": "/api",
   "paths": {
@@ -480,6 +480,69 @@
         "summary": "Get an array of test JSONs suitable for use with this descriptor type."
       }
     },
+    "/api/ga4gh/v2/extended/aiTopicCandidates": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "default": 0,
+            "description": "Start index of paging. If this exceeds the current result set return an empty set. If not specified in the request, this will start at the beginning of the results.",
+            "format": "int32",
+            "in": "query",
+            "minimum": 0,
+            "name": "offset",
+            "type": "integer"
+          },
+          {
+            "default": 1000,
+            "description": "Amount of records to return in a given page.",
+            "format": "int32",
+            "in": "query",
+            "maximum": 1000,
+            "minimum": 1,
+            "name": "limit",
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Retrieved published tools that are AI topic candidates and a single representative version name if it exists, otherwise an empty string is returned as the version name.",
+            "headers": {
+              "X-total-count": {
+                "description": "Total count of AI topic candidates",
+                "format": "int64",
+                "style": "simple",
+                "type": "integer"
+              }
+            },
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/EntryLiteAndVersionName"
+              },
+              "type": "array"
+            }
+          },
+          "401": {
+            "description": "Credentials not provided or incorrect.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        },
+        "security": [
+          {
+            "BEARER": []
+          }
+        ],
+        "tags": [
+          "extendedGA4GH"
+        ],
+        "description": "Get all published tools that are AI topic candidates and their representative version if it exists, otherwise an empty string is returned as the version name.",
+        "operationId": "getAITopicCandidates"
+      }
+    },
     "/api/ga4gh/v2/extended/containers/{organization}": {
       "get": {
         "produces": [
@@ -510,6 +573,42 @@
         "description": "This endpoint returns entries of an organization.",
         "operationId": "entriesOrgGet",
         "summary": "List entries of an organization"
+      }
+    },
+    "/api/ga4gh/v2/extended/entryVersionsToAggregate": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Entry versions to aggregate retrieved successfully.",
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/EntryLiteAndVersionName"
+              },
+              "type": "array"
+            }
+          },
+          "401": {
+            "description": "Credentials not provided or incorrect.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        },
+        "security": [
+          {
+            "BEARER": []
+          }
+        ],
+        "tags": [
+          "extendedGA4GH"
+        ],
+        "description": "This endpoint gets entry versions that have new execution metrics to aggregate.",
+        "operationId": "getEntryVersionsToAggregate",
+        "summary": "Get entry versions that have new execution metrics to aggregate."
       }
     },
     "/api/ga4gh/v2/extended/organizations": {
@@ -663,6 +762,98 @@
         "summary": "List workflows of an organization"
       }
     },
+    "/api/ga4gh/v2/extended/{id}/aiTopicCandidate": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Got workflow candidate version for topic generation.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          "401": {
+            "description": "Credentials not provided or incorrect.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "404": {
+            "description": "The tool cannot be found to get a candidate version for topic generation.",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        },
+        "security": [
+          {
+            "BEARER": []
+          }
+        ],
+        "tags": [
+          "extendedGA4GH"
+        ],
+        "description": "Get a tool's AI topic candidate version for consideration",
+        "operationId": "getAITopicCandidate"
+      }
+    },
+    "/api/ga4gh/v2/extended/{id}/updateAITopic": {
+      "put": {
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "description": "A unique identifier of the tool, scoped to this registry, for example `123456`",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "The name of the version that was used to generate a topic, for example `v1.0`",
+            "in": "query",
+            "name": "version",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "The update AI topic request",
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/UpdateAITopicRequest"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successfully updated the tool's AI topic"
+          }
+        },
+        "security": [
+          {
+            "BEARER": []
+          }
+        ],
+        "tags": [
+          "extendedGA4GH"
+        ],
+        "description": "Update a tool's AI topic.",
+        "operationId": "updateAITopic"
+      }
+    },
     "/api/ga4gh/v2/extended/{id}/versions/{version_id}/aggregatedMetrics": {
       "get": {
         "produces": [
@@ -730,34 +921,15 @@
             "type": "string"
           },
           {
-            "description": "Platform that the tool was executed on",
-            "enum": [
-              "GALAXY",
-              "TERRA",
-              "DNA_STACK",
-              "DNA_NEXUS",
-              "CGC",
-              "NHLBI_BIODATA_CATALYST",
-              "ANVIL",
-              "CAVATICA",
-              "NEXTFLOW_TOWER",
-              "ELWAZI",
-              "AGC",
-              "OTHER",
-              "ALL"
-            ],
-            "in": "query",
-            "name": "platform",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "description": "Aggregated metrics to add to the version",
+            "description": "A map of aggregated metrics for platforms to set as the version's metrics",
             "in": "body",
             "name": "body",
             "required": true,
             "schema": {
-              "$ref": "#/definitions/Metrics"
+              "additionalProperties": {
+                "$ref": "#/definitions/Metrics"
+              },
+              "type": "object"
             }
           }
         ],
@@ -929,7 +1101,7 @@
             "type": "string"
           },
           {
-            "description": "Individual execution metrics to submit. Submitting aggregated execution metrics is deprecated.",
+            "description": "Individual execution metrics to submit.",
             "in": "body",
             "name": "body",
             "required": true,
@@ -963,9 +1135,9 @@
         "tags": [
           "extendedGA4GH"
         ],
-        "description": "This endpoint submits individual execution metrics for a tool that was executed on a platform. Submitting aggregated execution metrics is deprecated.",
+        "description": "This endpoint submits individual execution metrics for a tool that was executed on a platform.",
         "operationId": "executionMetricsPost",
-        "summary": "Submit individual execution metrics for a tool that was executed on a platform. Submitting aggregated execution metrics is deprecated."
+        "summary": "Submit individual execution metrics for a tool that was executed on a platform."
       },
       "put": {
         "consumes": [
@@ -1055,9 +1227,9 @@
         "tags": [
           "extendedGA4GH"
         ],
-        "description": "This endpoint updates workflow executions that were executed on a platform. Does not update aggregated metrics, which is deprecated.",
+        "description": "This endpoint updates workflow executions that were executed on a platform.",
         "operationId": "ExecutionMetricsUpdate",
-        "summary": "Update workflow executions that were executed on a platform. Does not update aggregated metrics, which is deprecated."
+        "summary": "Update workflow executions that were executed on a platform."
       }
     },
     "/api/ga4gh/v2/extended/{id}/versions/{version_id}/{type}/tests/{relative_path}": {
@@ -2598,6 +2770,7 @@
             "default": 0,
             "format": "int32",
             "in": "query",
+            "minimum": 0,
             "name": "offset",
             "type": "integer"
           },
@@ -2605,6 +2778,8 @@
             "default": 100,
             "format": "int32",
             "in": "query",
+            "maximum": 100,
+            "minimum": 1,
             "name": "limit",
             "type": "integer"
           },
@@ -2714,38 +2889,6 @@
         ],
         "description": "Register a tool manually, along with tags.",
         "operationId": "registerManual"
-      }
-    },
-    "/containers/schema/{containerId}/published": {
-      "get": {
-        "produces": [
-          "application/json"
-        ],
-        "parameters": [
-          {
-            "format": "int64",
-            "in": "path",
-            "name": "containerId",
-            "required": true,
-            "type": "integer"
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": "default response",
-            "schema": {
-              "items": {
-                "type": "object"
-              },
-              "type": "array"
-            }
-          }
-        },
-        "tags": [
-          "containers"
-        ],
-        "description": "Get a published tool's schema by ID.",
-        "operationId": "getPublishedContainerSchema"
       }
     },
     "/containers/tags": {
@@ -3205,6 +3348,7 @@
         ],
         "parameters": [
           {
+            "description": "Tool id",
             "format": "int64",
             "in": "path",
             "name": "containerId",
@@ -3217,6 +3361,7 @@
             "type": "string"
           },
           {
+            "description": "Descriptor language",
             "enum": [
               "SMK",
               "CWL",
@@ -3229,6 +3374,7 @@
             ],
             "in": "query",
             "name": "language",
+            "required": true,
             "type": "string"
           }
         ],
@@ -3657,6 +3803,7 @@
         ],
         "parameters": [
           {
+            "description": "Tool id",
             "format": "int64",
             "in": "path",
             "name": "containerId",
@@ -3669,6 +3816,7 @@
             "type": "string"
           },
           {
+            "description": "Descriptor Type",
             "enum": [
               "SMK",
               "CWL",
@@ -3681,6 +3829,7 @@
             ],
             "in": "query",
             "name": "descriptorType",
+            "required": true,
             "type": "string"
           }
         ],
@@ -4092,34 +4241,6 @@
         "operationId": "updateNotification"
       }
     },
-    "/entries/updateEntryToGetTopics": {
-      "get": {
-        "produces": [
-          "application/json"
-        ],
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "Get the number of entries that failed to have their topics retrieved from GitHub.",
-            "schema": {
-              "format": "int32",
-              "type": "integer"
-            }
-          }
-        },
-        "security": [
-          {
-            "BEARER": []
-          }
-        ],
-        "tags": [
-          "entries"
-        ],
-        "deprecated": true,
-        "description": "Attempt to get the topic of all entries that use GitHub as the source control.",
-        "operationId": "updateEntryToGetTopics"
-      }
-    },
     "/entries/updateLanguageVersions": {
       "post": {
         "produces": [
@@ -4273,6 +4394,41 @@
         ],
         "description": "Export entry to ORCID. DOI is required",
         "operationId": "exportToORCID"
+      }
+    },
+    "/entries/{entryId}/syncStatus": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "description": "id of the entry",
+            "format": "int64",
+            "in": "path",
+            "name": "entryId",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Information about automatic updates to the entry",
+            "schema": {
+              "$ref": "#/definitions/SyncStatus"
+            }
+          }
+        },
+        "security": [
+          {
+            "BEARER": []
+          }
+        ],
+        "tags": [
+          "entries"
+        ],
+        "description": "Get information about automatic updates to the entry",
+        "operationId": "syncStatus"
       }
     },
     "/entries/{entryId}/verifiedPlatforms": {
@@ -5748,7 +5904,9 @@
               "enum": [
                 "hibernate",
                 "deadlocks",
-                "connectionPool"
+                "connectionPool",
+                "liquibaseLock",
+                "elasticsearchConsistency"
               ],
               "type": "string"
             },
@@ -5839,6 +5997,7 @@
             "in": "query",
             "name": "client_version",
             "pattern": "(^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-((?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\\.(?:0|[1-9]\\d*|\\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\\+([0-9a-zA-Z-]+(?:\\.[0-9a-zA-Z-]+)*))?$)|(^development-build$)",
+            "required": true,
             "type": "string"
           },
           {
@@ -7744,15 +7903,19 @@
         ],
         "parameters": [
           {
+            "description": "Start index of paging. Pagination results can be based on numbers or other values chosen by the registry implementor (for example, SHA values). If this exceeds the current result set return an empty set.  If not specified in the request, this will start at the beginning of the results.",
             "format": "int32",
             "in": "query",
+            "minimum": 0,
             "name": "offset",
             "type": "integer"
           },
           {
             "default": 100,
+            "description": "Amount of records to return in a given page, limited to 100",
             "format": "int32",
             "in": "query",
+            "maximum": 100,
             "name": "limit",
             "type": "integer"
           },
@@ -8364,6 +8527,7 @@
             ],
             "in": "query",
             "name": "source",
+            "required": true,
             "type": "string"
           }
         ],
@@ -8573,6 +8737,7 @@
             "description": "Maximum number of entries to return",
             "format": "int32",
             "in": "query",
+            "minimum": 1,
             "name": "count",
             "type": "integer"
           },
@@ -8628,6 +8793,7 @@
             "description": "Maximum number of organizations to return",
             "format": "int32",
             "in": "query",
+            "minimum": 1,
             "name": "count",
             "type": "integer"
           },
@@ -9496,8 +9662,51 @@
         "tags": [
           "workflows"
         ],
-        "description": "Handle a release of a repository on GitHub. Will create a workflow/service and version when necessary.",
+        "description": "Handle a push event on GitHub. Will create a workflow/service and version when necessary.",
         "operationId": "handleGitHubRelease"
+      }
+    },
+    "/workflows/github/taggedrelease": {
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "description": "A GUID to identify the GitHub webhook delivery",
+            "in": "header",
+            "name": "X-GitHub-Delivery",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "GitHub App repository release event payload",
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ReleasePayload"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "default response"
+          }
+        },
+        "security": [
+          {
+            "BEARER": []
+          }
+        ],
+        "tags": [
+          "workflows"
+        ],
+        "description": "Handles a release event on GitHub.",
+        "operationId": "handleGitHubTaggedRelease"
       }
     },
     "/workflows/hostedEntry": {
@@ -10183,6 +10392,7 @@
         ],
         "parameters": [
           {
+            "description": "repository path",
             "in": "path",
             "name": "repository",
             "required": true,
@@ -10261,6 +10471,7 @@
             "default": 0,
             "format": "int32",
             "in": "query",
+            "minimum": 0,
             "name": "offset",
             "type": "integer"
           },
@@ -10268,6 +10479,8 @@
             "default": 100,
             "format": "int32",
             "in": "query",
+            "maximum": 100,
+            "minimum": 1,
             "name": "limit",
             "type": "integer"
           },
@@ -10491,6 +10704,42 @@
         "operationId": "sharedWorkflows"
       }
     },
+    "/workflows/updateDois": {
+      "post": {
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "description": "Optional GitHub full repository name, e.g., myorg/myrepo, to only update entries for that repository",
+            "in": "query",
+            "name": "filter",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "default response",
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/Workflow"
+              },
+              "type": "array"
+            }
+          }
+        },
+        "security": [
+          {
+            "BEARER": []
+          }
+        ],
+        "tags": [
+          "workflows"
+        ],
+        "description": "Searches Zenodo for DOIs referencing GitHub repos, and updates Dockstore entries with them",
+        "operationId": "updateDois"
+      }
+    },
     "/workflows/versions": {
       "get": {
         "produces": [
@@ -10665,8 +10914,99 @@
         "tags": [
           "workflows"
         ],
-        "description": "Update the workflow with the given workflow.",
-        "operationId": "updateWorkflow"
+        "description": "Updates descriptor type, default workflow path, default test parameter file path, default version, forum URL, manual topic, topic selection, and DOI selection",
+        "operationId": "updateWorkflow",
+        "summary": "Update some of the workflow with the given workflow."
+      }
+    },
+    "/workflows/{workflowId}/DOIEditLink": {
+      "get": {
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "description": "Workflow with Dockstore DOI to get an access link for.",
+            "format": "int64",
+            "in": "path",
+            "name": "workflowId",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Access link successfully retrieved",
+            "schema": {
+              "$ref": "#/definitions/AccessLink"
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "BEARER": []
+          }
+        ],
+        "tags": [
+          "workflows"
+        ],
+        "description": "Get an existing access link with edit permissions for the workflow's Dockstore DOIs.",
+        "operationId": "getDOIEditLink"
+      }
+    },
+    "/workflows/{workflowId}/autogeneratedois": {
+      "put": {
+        "consumes": [
+          "application/json"
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "format": "int64",
+            "in": "path",
+            "name": "workflowId",
+            "required": true,
+            "type": "integer"
+          },
+          {
+            "description": "The request to update DOI generation",
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/AutoDoiRequest"
+            }
+          }
+        ],
+        "responses": {
+          "default": {
+            "description": "default response",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        },
+        "security": [
+          {
+            "BEARER": []
+          }
+        ],
+        "tags": [
+          "workflows"
+        ],
+        "description": "Whether Dockstore should auto-generate DOIs for GitHub tags",
+        "operationId": "autoGenerateDois"
       }
     },
     "/workflows/{workflowId}/dag/{workflowVersionId}": {
@@ -10752,6 +11092,44 @@
         "operationId": "updateDefaultVersion_1"
       }
     },
+    "/workflows/{workflowId}/deleteDOIEditLink": {
+      "delete": {
+        "parameters": [
+          {
+            "description": "Workflow to modify.",
+            "format": "int64",
+            "in": "path",
+            "name": "workflowId",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "BEARER": []
+          }
+        ],
+        "tags": [
+          "workflows"
+        ],
+        "description": "Delete the access link with edit permissions for the workflow's Dockstore DOIs. The DOI must have been created by Dockstore's Zenodo account.",
+        "operationId": "deleteDOIEditLink"
+      }
+    },
     "/workflows/{workflowId}/descriptor/{relative-path}": {
       "get": {
         "produces": [
@@ -10759,6 +11137,7 @@
         ],
         "parameters": [
           {
+            "description": "Workflow id",
             "format": "int64",
             "in": "path",
             "name": "workflowId",
@@ -10789,6 +11168,7 @@
             ],
             "in": "query",
             "name": "language",
+            "required": true,
             "type": "string"
           }
         ],
@@ -10916,6 +11296,7 @@
         ],
         "parameters": [
           {
+            "description": "Workflow id",
             "format": "int64",
             "in": "path",
             "name": "workflowId",
@@ -10928,8 +11309,19 @@
             "type": "string"
           },
           {
+            "enum": [
+              "SMK",
+              "CWL",
+              "WDL",
+              "gxformat2",
+              "SWL",
+              "NFL",
+              "service",
+              "jupyter"
+            ],
             "in": "query",
             "name": "language",
+            "required": true,
             "type": "string"
           }
         ],
@@ -11136,6 +11528,50 @@
         "operationId": "requestDOIForWorkflowVersion"
       }
     },
+    "/workflows/{workflowId}/requestDOIEditLink": {
+      "post": {
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "description": "Workflow with Dockstore DOI to request an access link for.",
+            "format": "int64",
+            "in": "path",
+            "name": "workflowId",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Access link successfully created",
+            "schema": {
+              "$ref": "#/definitions/AccessLink"
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          }
+        },
+        "security": [
+          {
+            "BEARER": []
+          }
+        ],
+        "tags": [
+          "workflows"
+        ],
+        "description": "Request an access link with edit permissions for the workflow's Dockstore DOIs. The DOI must have been created by Dockstore's Zenodo account.",
+        "operationId": "requestDOIEditLink"
+      }
+    },
     "/workflows/{workflowId}/resetVersionPaths": {
       "put": {
         "consumes": [
@@ -11222,6 +11658,7 @@
         ],
         "parameters": [
           {
+            "description": "Workflow id",
             "format": "int64",
             "in": "path",
             "name": "workflowId",
@@ -11246,6 +11683,7 @@
             ],
             "in": "query",
             "name": "language",
+            "required": true,
             "type": "string"
           }
         ],
@@ -12040,36 +12478,30 @@
     }
   },
   "definitions": {
-    "AggregatedExecution": {
-      "allOf": [
-        {
-          "$ref": "#/definitions/Metrics"
+    "AccessLink": {
+      "properties": {
+        "created_at": {
+          "type": "string"
         },
-        {
-          "properties": {
-            "additionalAggregatedMetrics": {
-              "additionalProperties": {
-                "description": "Additional aggregated metrics",
-                "type": "object"
-              },
-              "description": "Additional aggregated metrics",
-              "type": "object"
-            },
-            "executionId": {
-              "description": "User-provided ID of the execution. Must be unique and not used for previous executions. This ID is used to identify the execution when updating the execution",
-              "type": "string"
-            }
-          },
-          "type": "object"
+        "expires_at": {
+          "type": "string"
+        },
+        "id": {
+          "type": "string"
+        },
+        "permission": {
+          "enum": [
+            "view",
+            "preview",
+            "edit"
+          ],
+          "type": "string"
+        },
+        "token": {
+          "type": "string"
         }
-      ],
-      "description": "Aggregated metrics of multiple executions on a platform",
-      "required": [
-        "executionId",
-        "executionStatusCount"
-      ],
-      "type": "object",
-      "x-deprecated": true
+      },
+      "type": "object"
     },
     "Alias": {
       "properties": {
@@ -12103,6 +12535,19 @@
           "type": "string"
         }
       },
+      "type": "object"
+    },
+    "AutoDoiRequest": {
+      "description": "Request to control auto DOI generation",
+      "properties": {
+        "autoGenerateDois": {
+          "description": "Whether to automatically generate DOIs",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "autoGenerateDois"
+      ],
       "type": "object"
     },
     "BioWorkflow": {
@@ -12429,11 +12874,25 @@
           "format": "int64",
           "type": "integer"
         },
+        "isApprovedAITopic": {
+          "type": "boolean"
+        },
         "labels": {
           "items": {
             "type": "string"
           },
           "type": "array"
+        },
+        "topic": {
+          "type": "string"
+        },
+        "topicSelection": {
+          "enum": [
+            "AUTOMATIC",
+            "MANUAL",
+            "AI"
+          ],
+          "type": "string"
         },
         "verified": {
           "type": "boolean"
@@ -12637,43 +13096,49 @@
           "type": "number"
         }
       },
+      "required": [
+        "value"
+      ],
       "type": "object"
     },
     "CostMetric": {
-      "description": "This describes aggregated cost metrics for workflow executions in USD.",
-      "properties": {
-        "average": {
-          "description": "The average value from the data points",
-          "format": "double",
-          "type": "number"
+      "allOf": [
+        {
+          "$ref": "#/definitions/Metric"
         },
-        "id": {
-          "description": "Implementation specific ID for statistical metrics in this webservice",
-          "format": "int64",
-          "type": "integer"
-        },
-        "maximum": {
-          "description": "The maximum value from the data points",
-          "format": "double",
-          "type": "number"
-        },
-        "minimum": {
-          "description": "The minimum value from the data points",
-          "format": "double",
-          "type": "number"
-        },
-        "numberOfDataPointsForAverage": {
-          "description": "The number of data points used to calculate the average",
-          "format": "int32",
-          "type": "integer"
-        },
-        "unit": {
-          "default": "USD",
-          "description": "The unit of the data points",
-          "readOnly": true,
-          "type": "string"
+        {
+          "properties": {
+            "average": {
+              "description": "The average value from the data points",
+              "format": "double",
+              "type": "number"
+            },
+            "maximum": {
+              "description": "The maximum value from the data points",
+              "format": "double",
+              "type": "number"
+            },
+            "minimum": {
+              "description": "The minimum value from the data points",
+              "format": "double",
+              "type": "number"
+            },
+            "numberOfDataPointsForAverage": {
+              "description": "The number of data points used to calculate the average",
+              "format": "int32",
+              "type": "integer"
+            },
+            "unit": {
+              "default": "USD",
+              "description": "The unit of the data points",
+              "readOnly": true,
+              "type": "string"
+            }
+          },
+          "type": "object"
         }
-      },
+      ],
+      "description": "This describes aggregated cost metrics for workflow executions in USD.",
       "required": [
         "average",
         "maximum",
@@ -12683,39 +13148,42 @@
       "type": "object"
     },
     "CpuMetric": {
-      "description": "This describes aggregated CPU metrics for workflow executions.",
-      "properties": {
-        "average": {
-          "description": "The average value from the data points",
-          "format": "double",
-          "type": "number"
+      "allOf": [
+        {
+          "$ref": "#/definitions/Metric"
         },
-        "id": {
-          "description": "Implementation specific ID for statistical metrics in this webservice",
-          "format": "int64",
-          "type": "integer"
-        },
-        "maximum": {
-          "description": "The maximum value from the data points",
-          "format": "double",
-          "type": "number"
-        },
-        "minimum": {
-          "description": "The minimum value from the data points",
-          "format": "double",
-          "type": "number"
-        },
-        "numberOfDataPointsForAverage": {
-          "description": "The number of data points used to calculate the average",
-          "format": "int32",
-          "type": "integer"
-        },
-        "unit": {
-          "description": "The unit of the data points",
-          "readOnly": true,
-          "type": "string"
+        {
+          "properties": {
+            "average": {
+              "description": "The average value from the data points",
+              "format": "double",
+              "type": "number"
+            },
+            "maximum": {
+              "description": "The maximum value from the data points",
+              "format": "double",
+              "type": "number"
+            },
+            "minimum": {
+              "description": "The minimum value from the data points",
+              "format": "double",
+              "type": "number"
+            },
+            "numberOfDataPointsForAverage": {
+              "description": "The number of data points used to calculate the average",
+              "format": "int32",
+              "type": "integer"
+            },
+            "unit": {
+              "description": "The unit of the data points",
+              "readOnly": true,
+              "type": "string"
+            }
+          },
+          "type": "object"
         }
-      },
+      ],
+      "description": "This describes aggregated CPU metrics for workflow executions.",
       "required": [
         "average",
         "maximum",
@@ -12768,11 +13236,12 @@
           },
           "type": "object"
         },
-        "archived": {
+        "approvedAITopic": {
+          "description": "Indicates if the topicAI has been approved by the user",
           "type": "boolean"
         },
-        "author": {
-          "type": "string"
+        "archived": {
+          "type": "boolean"
         },
         "authors": {
           "description": "Non-ORCID authors for the entry, retrieved from the default version",
@@ -12788,7 +13257,16 @@
           "type": "integer"
         },
         "conceptDoi": {
-          "type": "string"
+          "description": "The Digital Object Identifier (DOI) representing all of the versions of your workflow",
+          "type": "string",
+          "x-deprecated": true
+        },
+        "conceptDois": {
+          "additionalProperties": {
+            "$ref": "#/definitions/Doi"
+          },
+          "description": "The Digital Object Identifier (DOI) representing all of the versions of your workflow",
+          "type": "object"
         },
         "custom_docker_registry_path": {
           "type": "string"
@@ -12834,7 +13312,13 @@
           },
           "type": "array"
         },
-        "email": {
+        "doiSelection": {
+          "description": "The Digital Object Identifier (DOI) to display publicly",
+          "enum": [
+            "USER",
+            "DOCKSTORE",
+            "GITHUB"
+          ],
           "type": "string"
         },
         "entryType": {
@@ -12974,12 +13458,12 @@
         },
         "topicAI": {
           "description": "Short description of the entry generated by AI",
-          "maxLength": 150,
+          "maxLength": 250,
           "type": "string"
         },
         "topicAutomatic": {
           "description": "Short description of the entry gotten automatically",
-          "maxLength": 150,
+          "maxLength": 250,
           "type": "string"
         },
         "topicId": {
@@ -12988,7 +13472,7 @@
         },
         "topicManual": {
           "description": "Short description of the entry manually updated",
-          "maxLength": 150,
+          "maxLength": 250,
           "type": "string"
         },
         "topicSelection": {
@@ -12998,6 +13482,9 @@
             "MANUAL",
             "AI"
           ],
+          "type": "string"
+        },
+        "trsId": {
           "type": "string"
         },
         "userIdToOrcidPutCode": {
@@ -13024,6 +13511,46 @@
       },
       "type": "object"
     },
+    "Doi": {
+      "description": "A Digital Object Identifier (DOI)",
+      "properties": {
+        "id": {
+          "description": "Implementation specific ID for the DOI in this web service",
+          "format": "int64",
+          "type": "integer"
+        },
+        "initiator": {
+          "description": "The initiator that initiated the creation of the DOI",
+          "enum": [
+            "USER",
+            "DOCKSTORE",
+            "GITHUB"
+          ],
+          "example": "USER",
+          "type": "string"
+        },
+        "name": {
+          "description": "The DOI name",
+          "example": "10.5281/zenodo.705645",
+          "type": "string"
+        },
+        "type": {
+          "description": "The type of DOI",
+          "enum": [
+            "CONCEPT",
+            "VERSION"
+          ],
+          "example": "CONCEPT",
+          "type": "string"
+        }
+      },
+      "required": [
+        "initiator",
+        "name",
+        "type"
+      ],
+      "type": "object"
+    },
     "Entry": {
       "description": "This describes one high-level entity in the dockstore",
       "properties": {
@@ -13033,11 +13560,12 @@
           },
           "type": "object"
         },
-        "archived": {
+        "approvedAITopic": {
+          "description": "Indicates if the topicAI has been approved by the user",
           "type": "boolean"
         },
-        "author": {
-          "type": "string"
+        "archived": {
+          "type": "boolean"
         },
         "authors": {
           "description": "Non-ORCID authors for the entry, retrieved from the default version",
@@ -13053,7 +13581,16 @@
           "type": "integer"
         },
         "conceptDoi": {
-          "type": "string"
+          "description": "The Digital Object Identifier (DOI) representing all of the versions of your workflow",
+          "type": "string",
+          "x-deprecated": true
+        },
+        "conceptDois": {
+          "additionalProperties": {
+            "$ref": "#/definitions/Doi"
+          },
+          "description": "The Digital Object Identifier (DOI) representing all of the versions of your workflow",
+          "type": "object"
         },
         "dbCreateDate": {
           "format": "int64",
@@ -13072,7 +13609,13 @@
         "description": {
           "type": "string"
         },
-        "email": {
+        "doiSelection": {
+          "description": "The Digital Object Identifier (DOI) to display publicly",
+          "enum": [
+            "USER",
+            "DOCKSTORE",
+            "GITHUB"
+          ],
           "type": "string"
         },
         "entryType": {
@@ -13157,12 +13700,12 @@
         },
         "topicAI": {
           "description": "Short description of the entry generated by AI",
-          "maxLength": 150,
+          "maxLength": 250,
           "type": "string"
         },
         "topicAutomatic": {
           "description": "Short description of the entry gotten automatically",
-          "maxLength": 150,
+          "maxLength": 250,
           "type": "string"
         },
         "topicId": {
@@ -13171,7 +13714,7 @@
         },
         "topicManual": {
           "description": "Short description of the entry manually updated",
-          "maxLength": 150,
+          "maxLength": 250,
           "type": "string"
         },
         "topicSelection": {
@@ -13181,6 +13724,9 @@
             "MANUAL",
             "AI"
           ],
+          "type": "string"
+        },
+        "trsId": {
           "type": "string"
         },
         "userIdToOrcidPutCode": {
@@ -13207,8 +13753,42 @@
       },
       "type": "object"
     },
+    "EntryLite": {
+      "properties": {
+        "entryPath": {
+          "type": "string"
+        },
+        "entryType": {
+          "$ref": "#/definitions/EntryType"
+        },
+        "entryTypeMetadata": {
+          "$ref": "#/definitions/EntryTypeMetadata"
+        },
+        "lastUpdated": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "prettyPath": {
+          "type": "string"
+        },
+        "trsId": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "EntryLiteAndVersionName": {
+      "properties": {
+        "entryLite": {
+          "$ref": "#/definitions/EntryLite"
+        },
+        "versionName": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "EntryType": {
-      "description": "Entry type",
       "enum": [
         "TOOL",
         "WORKFLOW",
@@ -13439,82 +14019,88 @@
       "type": "object"
     },
     "ExecutionStatusMetric": {
-      "description": "Aggregated metrics about workflow execution statuses",
-      "properties": {
-        "count": {
-          "additionalProperties": {
-            "$ref": "#/definitions/MetricsByStatus"
+      "allOf": [
+        {
+          "$ref": "#/definitions/Metric"
+        },
+        {
+          "properties": {
+            "count": {
+              "additionalProperties": {
+                "$ref": "#/definitions/MetricsByStatus"
+              },
+              "description": "A map containing the metrics for each execution status",
+              "type": "object"
+            },
+            "numberOfAbortedExecutions": {
+              "description": "Number of aborted executions. An execution is aborted if its execution is stopped after it has started",
+              "example": 0,
+              "format": "int32",
+              "readOnly": true,
+              "type": "integer"
+            },
+            "numberOfFailedExecutions": {
+              "description": "Number of failed executions. An execution may have failed because it was semantically or runtime invalid",
+              "example": 2,
+              "format": "int32",
+              "readOnly": true,
+              "type": "integer"
+            },
+            "numberOfSuccessfulExecutions": {
+              "description": "Number of successful executions",
+              "example": 5,
+              "format": "int32",
+              "readOnly": true,
+              "type": "integer"
+            }
           },
-          "description": "A map containing the metrics for each execution status",
           "type": "object"
-        },
-        "id": {
-          "description": "Implementation specific ID for the count metrics in this webservice",
-          "format": "int64",
-          "type": "integer"
-        },
-        "numberOfAbortedExecutions": {
-          "description": "Number of aborted executions. An execution is aborted if its execution is stopped after it has started",
-          "example": 0,
-          "format": "int32",
-          "readOnly": true,
-          "type": "integer"
-        },
-        "numberOfFailedExecutions": {
-          "description": "Number of failed executions. An execution may have failed because it was semantically or runtime invalid",
-          "example": 2,
-          "format": "int32",
-          "readOnly": true,
-          "type": "integer"
-        },
-        "numberOfSuccessfulExecutions": {
-          "description": "Number of successful executions",
-          "example": 5,
-          "format": "int32",
-          "readOnly": true,
-          "type": "integer"
         }
-      },
+      ],
+      "description": "Aggregated metrics about workflow execution statuses",
       "required": [
         "count"
       ],
       "type": "object"
     },
     "ExecutionTimeMetric": {
-      "description": "This describes aggregated execution time metrics in seconds for workflow executions.",
-      "properties": {
-        "average": {
-          "description": "The average value from the data points",
-          "format": "double",
-          "type": "number"
+      "allOf": [
+        {
+          "$ref": "#/definitions/Metric"
         },
-        "id": {
-          "description": "Implementation specific ID for statistical metrics in this webservice",
-          "format": "int64",
-          "type": "integer"
-        },
-        "maximum": {
-          "description": "The maximum value from the data points",
-          "format": "double",
-          "type": "number"
-        },
-        "minimum": {
-          "description": "The minimum value from the data points",
-          "format": "double",
-          "type": "number"
-        },
-        "numberOfDataPointsForAverage": {
-          "description": "The number of data points used to calculate the average",
-          "format": "int32",
-          "type": "integer"
-        },
-        "unit": {
-          "default": "s",
-          "description": "The unit of the data points",
-          "readOnly": true,
-          "type": "string"
+        {
+          "properties": {
+            "average": {
+              "description": "The average value from the data points",
+              "format": "double",
+              "type": "number"
+            },
+            "maximum": {
+              "description": "The maximum value from the data points",
+              "format": "double",
+              "type": "number"
+            },
+            "minimum": {
+              "description": "The minimum value from the data points",
+              "format": "double",
+              "type": "number"
+            },
+            "numberOfDataPointsForAverage": {
+              "description": "The number of data points used to calculate the average",
+              "format": "int32",
+              "type": "integer"
+            },
+            "unit": {
+              "default": "s",
+              "description": "The unit of the data points",
+              "readOnly": true,
+              "type": "string"
+            }
+          },
+          "type": "object"
         }
-      },
+      ],
+      "description": "This describes aggregated execution time metrics in seconds for workflow executions.",
       "required": [
         "average",
         "maximum",
@@ -13526,14 +14112,6 @@
     "ExecutionsRequestBody": {
       "description": "Request body model for executionMetricsPost",
       "properties": {
-        "aggregatedExecutions": {
-          "description": "List of aggregated executions to submit",
-          "items": {
-            "$ref": "#/definitions/AggregatedExecution"
-          },
-          "type": "array",
-          "x-deprecated": true
-        },
         "runExecutions": {
           "description": "List of workflow run executions to submit",
           "items": {
@@ -13557,7 +14135,6 @@
         }
       },
       "required": [
-        "aggregatedExecutions",
         "runExecutions",
         "taskExecutions",
         "validationExecutions"
@@ -13630,6 +14207,32 @@
           "type": "string"
         },
         "url": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "GitCommit": {
+      "description": "Information about a commit on a GitHub push event. See https://docs.github.com/en/webhooks/webhook-events-and-payloads#push, under commits and head_commit",
+      "properties": {
+        "author": {
+          "$ref": "#/definitions/GitHubUser"
+        },
+        "committer": {
+          "$ref": "#/definitions/GitHubUser"
+        }
+      },
+      "type": "object"
+    },
+    "GitHubUser": {
+      "properties": {
+        "email": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "username": {
           "type": "string"
         }
       },
@@ -13771,8 +14374,19 @@
         },
         {
           "properties": {
+            "action": {
+              "description": "The action which the event describes",
+              "type": "string"
+            },
             "repositories_added": {
               "description": "An array of repository objects, which were added to the installation",
+              "items": {
+                "$ref": "#/definitions/WebhookRepository"
+              },
+              "type": "array"
+            },
+            "repositories_removed": {
+              "description": "An array of repository objects, which were removed from the installation",
               "items": {
                 "$ref": "#/definitions/WebhookRepository"
               },
@@ -13783,22 +14397,12 @@
         }
       ],
       "description": "A model for a GitHub webhook installation event",
-      "example": {
-        "installation": {
-          "id": 0
-        },
-        "repositories_added": [
-          {
-            "full_name": "dockstore/dockstore-ui2"
-          }
-        ],
-        "sender": {
-          "login": "string"
-        }
-      },
+      "example": "{\n  \"sender\": {\n    \"login\": \"string\"\n  },\n  \"action\": \"added\",\n  \"installation\": {\n    \"id\": 0\n  },\n  \"repositories_added\": [\n    {\n      \"full_name\": \"dockstore/dockstore-ui2\"\n    }\n  ]\n  \"repositories_removed\": [\n  ]\n}\n",
       "required": [
+        "action",
         "installation",
         "repositories_added",
+        "repositories_removed",
         "sender"
       ],
       "type": "object"
@@ -13860,7 +14464,9 @@
             "PUSH",
             "DELETE",
             "INSTALL",
-            "PUBLISH"
+            "UNINSTALL",
+            "PUBLISH",
+            "RELEASE"
           ],
           "type": "string"
         }
@@ -14013,40 +14619,43 @@
       "type": "object"
     },
     "MemoryMetric": {
-      "description": "This describes aggregated memory metrics for workflow executions in GB.",
-      "properties": {
-        "average": {
-          "description": "The average value from the data points",
-          "format": "double",
-          "type": "number"
+      "allOf": [
+        {
+          "$ref": "#/definitions/Metric"
         },
-        "id": {
-          "description": "Implementation specific ID for statistical metrics in this webservice",
-          "format": "int64",
-          "type": "integer"
-        },
-        "maximum": {
-          "description": "The maximum value from the data points",
-          "format": "double",
-          "type": "number"
-        },
-        "minimum": {
-          "description": "The minimum value from the data points",
-          "format": "double",
-          "type": "number"
-        },
-        "numberOfDataPointsForAverage": {
-          "description": "The number of data points used to calculate the average",
-          "format": "int32",
-          "type": "integer"
-        },
-        "unit": {
-          "default": "GB",
-          "description": "The unit of the data points",
-          "readOnly": true,
-          "type": "string"
+        {
+          "properties": {
+            "average": {
+              "description": "The average value from the data points",
+              "format": "double",
+              "type": "number"
+            },
+            "maximum": {
+              "description": "The maximum value from the data points",
+              "format": "double",
+              "type": "number"
+            },
+            "minimum": {
+              "description": "The minimum value from the data points",
+              "format": "double",
+              "type": "number"
+            },
+            "numberOfDataPointsForAverage": {
+              "description": "The number of data points used to calculate the average",
+              "format": "int32",
+              "type": "integer"
+            },
+            "unit": {
+              "default": "GB",
+              "description": "The unit of the data points",
+              "readOnly": true,
+              "type": "string"
+            }
+          },
+          "type": "object"
         }
-      },
+      ],
+      "description": "This describes aggregated memory metrics for workflow executions in GB.",
       "required": [
         "average",
         "maximum",
@@ -14074,6 +14683,23 @@
         "api_version",
         "version"
       ],
+      "type": "object"
+    },
+    "Metric": {
+      "description": "Describes an aggregated metric",
+      "properties": {
+        "id": {
+          "description": "Implementation specific ID for metrics in this webservice",
+          "format": "int64",
+          "type": "integer"
+        },
+        "numberOfSkippedExecutions": {
+          "default": 0,
+          "description": "The number of executions that were skipped during aggregation because they were invalid",
+          "format": "int32",
+          "type": "integer"
+        }
+      },
       "type": "object"
     },
     "Metrics": {
@@ -14510,6 +15136,16 @@
               "example": "6d96270004515a0486bb7f76196a72b40c55a47f",
               "type": "string"
             },
+            "commits": {
+              "description": "An array of commit objects describing the pushed commits",
+              "items": {
+                "$ref": "#/definitions/GitCommit"
+              },
+              "type": "array"
+            },
+            "head_commit": {
+              "$ref": "#/definitions/GitCommit"
+            },
             "ref": {
               "description": "The full git ref that was pushed",
               "example": "refs/heads/master OR refs/tags/v1.0",
@@ -14549,6 +15185,38 @@
           "type": "string"
         }
       },
+      "type": "object"
+    },
+    "ReleasePayload": {
+      "properties": {
+        "action": {
+          "description": "The action which the event describes",
+          "type": "string"
+        },
+        "draft": {
+          "description": "Whether this is a draft release",
+          "type": "boolean"
+        },
+        "installation": {
+          "$ref": "#/definitions/Installation"
+        },
+        "release": {
+          "$ref": "#/definitions/WebhookRelease"
+        },
+        "repository": {
+          "$ref": "#/definitions/WebhookRepository"
+        },
+        "sender": {
+          "$ref": "#/definitions/Sender"
+        }
+      },
+      "required": [
+        "action",
+        "draft",
+        "installation",
+        "release",
+        "sender"
+      ],
       "type": "object"
     },
     "Repository": {
@@ -14751,6 +15419,15 @@
           "description": "Path to sourcefile relative to its parent",
           "type": "string"
         },
+        "state": {
+          "description": "Enumerates the file state",
+          "enum": [
+            "COMPLETE",
+            "NOT_STORED",
+            "STUB"
+          ],
+          "type": "string"
+        },
         "type": {
           "description": "Enumerates the type of file",
           "enum": [
@@ -14790,6 +15467,7 @@
       "required": [
         "absolutePath",
         "path",
+        "state",
         "type"
       ],
       "type": "object"
@@ -14813,6 +15491,16 @@
     "StarRequest": {
       "properties": {
         "star": {
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "SyncStatus": {
+      "description": "Information about automatic updates to the entry",
+      "properties": {
+        "gitHubAppInstalled": {
+          "description": "False if the GitHub App is conclusively not installed, true otherwise.",
           "type": "boolean"
         }
       },
@@ -14907,6 +15595,9 @@
     "Tag": {
       "description": "This describes one tag associated with a container.",
       "properties": {
+        "aiTopicProcessed": {
+          "type": "boolean"
+        },
         "author": {
           "type": "string"
         },
@@ -14961,6 +15652,13 @@
         },
         "doiURL": {
           "type": "string"
+        },
+        "dois": {
+          "additionalProperties": {
+            "$ref": "#/definitions/Doi"
+          },
+          "description": "The DOIs for the version of the entry",
+          "type": "object"
         },
         "email": {
           "type": "string"
@@ -15764,6 +16462,19 @@
       ],
       "type": "object"
     },
+    "UpdateAITopicRequest": {
+      "description": "The AI topic update request",
+      "properties": {
+        "aiTopic": {
+          "description": "The AI topic",
+          "type": "string"
+        }
+      },
+      "required": [
+        "aiTopic"
+      ],
+      "type": "object"
+    },
     "User": {
       "properties": {
         "avatarUrl": {
@@ -15959,21 +16670,24 @@
       "type": "object"
     },
     "ValidationStatusMetric": {
-      "description": "Aggregated metrics about workflow validation statuses",
-      "properties": {
-        "id": {
-          "description": "Implementation specific ID for the count metrics in this webservice",
-          "format": "int64",
-          "type": "integer"
+      "allOf": [
+        {
+          "$ref": "#/definitions/Metric"
         },
-        "validatorTools": {
-          "additionalProperties": {
-            "$ref": "#/definitions/ValidatorInfo"
+        {
+          "properties": {
+            "validatorTools": {
+              "additionalProperties": {
+                "$ref": "#/definitions/ValidatorInfo"
+              },
+              "description": "A map containing key-value pairs indicating whether the validator tool successfully validated the workflow",
+              "type": "object"
+            }
           },
-          "description": "A map containing key-value pairs indicating whether the validator tool successfully validated the workflow",
           "type": "object"
         }
-      },
+      ],
+      "description": "Aggregated metrics about workflow validation statuses",
       "required": [
         "validatorTools"
       ],
@@ -16082,6 +16796,9 @@
     "Version": {
       "description": "This describes a version of an entry in Dockstore",
       "properties": {
+        "aiTopicProcessed": {
+          "type": "boolean"
+        },
         "author": {
           "type": "string"
         },
@@ -16127,6 +16844,13 @@
         },
         "doiURL": {
           "type": "string"
+        },
+        "dois": {
+          "additionalProperties": {
+            "$ref": "#/definitions/Doi"
+          },
+          "description": "The DOIs for the version of the entry",
+          "type": "object"
         },
         "email": {
           "type": "string"
@@ -16252,11 +16976,22 @@
     },
     "VersionMetadata": {
       "properties": {
+        "aiTopicProcessed": {
+          "description": "True if Dockstore has processed this version for an AI topic",
+          "type": "boolean"
+        },
         "descriptorTypeVersions": {
           "items": {
             "type": "string"
           },
           "type": "array"
+        },
+        "dois": {
+          "additionalProperties": {
+            "$ref": "#/definitions/Doi"
+          },
+          "description": "The DOIs for the version of the entry",
+          "type": "object"
         },
         "engineVersions": {
           "items": {
@@ -16265,6 +17000,16 @@
           "type": "array"
         },
         "id": {
+          "format": "int64",
+          "type": "integer"
+        },
+        "latestMetricsAggregationDate": {
+          "description": "The timestamp of the last metrics aggregation",
+          "format": "int64",
+          "type": "integer"
+        },
+        "latestMetricsSubmissionDate": {
+          "description": "The timestamp of the last metrics submission",
           "format": "int64",
           "type": "integer"
         },
@@ -16326,6 +17071,24 @@
       },
       "type": "object"
     },
+    "WebhookRelease": {
+      "description": "Details about the release",
+      "properties": {
+        "published_at": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "tag_name": {
+          "description": "Name of the tag associated with the release",
+          "example": "mytag",
+          "type": "string"
+        }
+      },
+      "required": [
+        "tag_name"
+      ],
+      "type": "object"
+    },
     "WebhookRepository": {
       "description": "The repository where the GitHub webhook event occurred",
       "properties": {
@@ -16350,11 +17113,12 @@
           },
           "type": "object"
         },
-        "archived": {
+        "approvedAITopic": {
+          "description": "Indicates if the topicAI has been approved by the user",
           "type": "boolean"
         },
-        "author": {
-          "type": "string"
+        "archived": {
+          "type": "boolean"
         },
         "authors": {
           "description": "Non-ORCID authors for the entry, retrieved from the default version",
@@ -16365,12 +17129,25 @@
           "type": "array",
           "uniqueItems": true
         },
+        "autoGenerateDois": {
+          "description": "Whether to automatically generate DOIs for GitHub tags",
+          "type": "boolean"
+        },
         "checker_id": {
           "format": "int64",
           "type": "integer"
         },
         "conceptDoi": {
-          "type": "string"
+          "description": "The Digital Object Identifier (DOI) representing all of the versions of your workflow",
+          "type": "string",
+          "x-deprecated": true
+        },
+        "conceptDois": {
+          "additionalProperties": {
+            "$ref": "#/definitions/Doi"
+          },
+          "description": "The Digital Object Identifier (DOI) representing all of the versions of your workflow",
+          "type": "object"
         },
         "dbCreateDate": {
           "format": "int64",
@@ -16421,7 +17198,13 @@
           ],
           "type": "string"
         },
-        "email": {
+        "doiSelection": {
+          "description": "The Digital Object Identifier (DOI) to display publicly",
+          "enum": [
+            "USER",
+            "DOCKSTORE",
+            "GITHUB"
+          ],
           "type": "string"
         },
         "entryType": {
@@ -16477,6 +17260,11 @@
           "type": "integer"
         },
         "last_modified_date": {
+          "format": "int64",
+          "type": "integer"
+        },
+        "latestReleaseDate": {
+          "description": "The timestamp of the most recent version control release, such as a GitHub release",
           "format": "int64",
           "type": "integer"
         },
@@ -16547,12 +17335,12 @@
         },
         "topicAI": {
           "description": "Short description of the entry generated by AI",
-          "maxLength": 150,
+          "maxLength": 250,
           "type": "string"
         },
         "topicAutomatic": {
           "description": "Short description of the entry gotten automatically",
-          "maxLength": 150,
+          "maxLength": 250,
           "type": "string"
         },
         "topicId": {
@@ -16561,7 +17349,7 @@
         },
         "topicManual": {
           "description": "Short description of the entry manually updated",
-          "maxLength": 150,
+          "maxLength": 250,
           "type": "string"
         },
         "topicSelection": {
@@ -16571,6 +17359,9 @@
             "MANUAL",
             "AI"
           ],
+          "type": "string"
+        },
+        "trsId": {
           "type": "string"
         },
         "type": {
@@ -16623,6 +17414,9 @@
     "WorkflowVersion": {
       "description": "This describes one workflow version associated with a workflow.",
       "properties": {
+        "aiTopicProcessed": {
+          "type": "boolean"
+        },
         "aliases": {
           "additionalProperties": {
             "$ref": "#/definitions/Alias"
@@ -16674,6 +17468,13 @@
         },
         "doiURL": {
           "type": "string"
+        },
+        "dois": {
+          "additionalProperties": {
+            "$ref": "#/definitions/Doi"
+          },
+          "description": "The DOIs for the version of the entry",
+          "type": "object"
         },
         "email": {
           "type": "string"
